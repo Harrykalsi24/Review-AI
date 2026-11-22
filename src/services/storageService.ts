@@ -13,10 +13,12 @@ export const storageService = {
       const raw = localStorage.getItem(KEYS.settings);
       if (!raw) return { ...DEFAULT_SETTINGS };
       const parsed = JSON.parse(raw);
+      const rawUrl = parsed.googleReviewUrl;
+      const validUrl = rawUrl && rawUrl !== 'https://share.google/OYkxuaWVHplJcPR7T' ? rawUrl : DEFAULT_SETTINGS.googleReviewUrl;
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
-        googleReviewUrl: parsed.googleReviewUrl || DEFAULT_SETTINGS.googleReviewUrl,
+        googleReviewUrl: validUrl,
         aiApiKey: parsed.aiApiKey || DEFAULT_SETTINGS.aiApiKey,
         aiBaseUrl: parsed.aiBaseUrl || DEFAULT_SETTINGS.aiBaseUrl,
         aiModel: parsed.aiModel || DEFAULT_SETTINGS.aiModel,
