@@ -14,7 +14,7 @@ export const storageService = {
       if (!raw) return { ...DEFAULT_SETTINGS };
       const parsed = JSON.parse(raw);
       const rawUrl = parsed.googleReviewUrl;
-      const validUrl = rawUrl && rawUrl !== 'https://share.google/OYkxuaWVHplJcPR7T' ? rawUrl : DEFAULT_SETTINGS.googleReviewUrl;
+      const validUrl = rawUrl && rawUrl.includes('modern+electronics') ? rawUrl : DEFAULT_SETTINGS.googleReviewUrl;
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,

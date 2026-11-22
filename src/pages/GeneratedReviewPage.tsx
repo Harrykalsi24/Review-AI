@@ -83,18 +83,15 @@ export default function GeneratedReviewPage({ data, settings, onBack }: Props) {
     }
   };
 
-  const handlePostReview = async () => {
-    // 1. Copy review text to clipboard automatically
-    await copyToClipboard(reviewText);
+  const targetUrl = settings.googleReviewUrl && settings.googleReviewUrl.includes('modern+electronics')
+    ? settings.googleReviewUrl
+    : 'https://www.google.com/search?sca_esv=b0c5f1cb68949abc&sxsrf=AKL5yDjXKyBwRHZI6l5D_Gr7yVJaVaScPQ:1795345389939&q=modern+electronics+mukerian+reviews&si=AE1YtOqiKPb2pdLXAi8quZ9vbH4aVq_aX8-3H9iFBLpRNK95c5QMlqd4pgBonGaW2_OMYweIHovXhYkdILFdz9FV1GYPDeEu_as-jAA8i7uQkfDu5MN5zRRv6hVZL82TK5tD69XxaqgTTnInXERJcBvntLDBqwi0Sw%3D%3D&sa=X&ved=2ahUKEwiLlN3htpuYAxW7DjQIHQEXBnsQyNoBKAB6BAgeEAA&ictx=1&biw=1366&bih=617&dpr=1';
+
+  const handlePostReview = () => {
+    // 1. Copy review text to clipboard immediately
+    copyToClipboard(reviewText);
     setCopied(true);
     setShowPostModal(true);
-
-    // 2. Open Google review link
-    // Google review direct URL:
-    const targetUrl = settings.googleReviewUrl || 'https://www.google.com/search?sca_esv=b0c5f1cb68949abc&sxsrf=AKL5yDjXKyBwRHZI6l5D_Gr7yVJaVaScPQ:1795345389939&q=modern+electronics+mukerian+reviews&si=AE1YtOqiKPb2pdLXAi8quZ9vbH4aVq_aX8-3H9iFBLpRNK95c5QMlqd4pgBonGaW2_OMYweIHovXhYkdILFdz9FV1GYPDeEu_as-jAA8i7uQkfDu5MN5zRRv6hVZL82TK5tD69XxaqgTTnInXERJcBvntLDBqwi0Sw%3D%3D&sa=X&ved=2ahUKEwiLlN3htpuYAxW7DjQIHQEXBnsQyNoBKAB6BAgeEAA&ictx=1&biw=1366&bih=617&dpr=1';
-    setTimeout(() => {
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
-    }, 400);
   };
 
   const starLabels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
@@ -245,14 +242,16 @@ export default function GeneratedReviewPage({ data, settings, onBack }: Props) {
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-2.5 pt-2 border-t border-slate-100">
-              <button
-                type="button"
+              <a
+                href={targetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={handlePostReview}
                 className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all active:scale-[0.98]"
               >
                 <ExternalLink className="w-4 h-4" />
                 <span>Post Review on Google</span>
-              </button>
+              </a>
 
               <button
                 type="button"
@@ -277,7 +276,7 @@ export default function GeneratedReviewPage({ data, settings, onBack }: Props) {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
-              className="bg-emerald-50 border border-emerald-200 rounded-3xl p-4.5 flex flex-col gap-2 shadow-sm"
+              className="bg-emerald-50 border border-emerald-200 rounded-3xl p-4.5 flex flex-col gap-3 shadow-sm"
             >
               <div className="flex items-center gap-2 font-bold text-emerald-900 text-sm">
                 <ClipboardCheck className="w-5 h-5 text-emerald-600 shrink-0" />
@@ -286,11 +285,20 @@ export default function GeneratedReviewPage({ data, settings, onBack }: Props) {
               <p className="text-xs text-emerald-800 leading-relaxed">
                 Google is opening in your browser. Since websites cannot automatically submit Google reviews on your behalf, simply <strong>paste (Ctrl+V / Long-press Paste)</strong> your copied review into the Google review box, check your <strong>{stars}-star rating</strong>, and hit Submit!
               </p>
-              <div className="pt-1 flex justify-end">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 border-t border-emerald-200/60">
+                <a
+                  href={targetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1 underline"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Click here if review page didn't open</span>
+                </a>
                 <button
                   type="button"
                   onClick={() => setShowPostModal(false)}
-                  className="text-xs font-bold text-emerald-700 hover:text-emerald-900 underline"
+                  className="text-xs font-bold text-slate-500 hover:text-slate-700 px-3 py-1 rounded-lg bg-emerald-100/60 hover:bg-emerald-100 transition-colors"
                 >
                   Got it
                 </button>
