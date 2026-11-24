@@ -15,7 +15,11 @@ export const storageService = {
       const parsed = JSON.parse(raw);
       const rawUrl = parsed.googleReviewUrl;
       const validUrl = rawUrl && rawUrl.includes('modern+electronics') ? rawUrl : DEFAULT_SETTINGS.googleReviewUrl;
-      const logoUrl = parsed.logoUrl || DEFAULT_SETTINGS.logoUrl;
+      const rawLogo = parsed.logoUrl;
+      // Upgrade any stale or broken relative logo path to embedded LOGO_BASE64
+      const logoUrl = (!rawLogo || rawLogo === '/logo.png' || rawLogo === 'logo.png')
+        ? DEFAULT_SETTINGS.logoUrl
+        : rawLogo;
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
