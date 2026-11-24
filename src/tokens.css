@@ -1,0 +1,68 @@
+@theme static {
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5625rem;
+  --text-2xl: 1.953rem;
+  --text-3xl: 2.441rem;
+  --text-display-s: clamp(2.25rem, 4vw + 0.5rem, 3.75rem);
+  --text-display: clamp(2.75rem, 5vw + 1rem, 5.25rem);
+  --text-section: clamp(2rem, 2.5vw + 1rem, 3.5rem);
+  --text-title: clamp(1.25rem, 0.75vw + 0.875rem, 1.625rem);
+  --text-lead: clamp(1.125rem, 0.35vw + 1rem, 1.375rem);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --color-error: oklch(54% 0.22 26);
+  --color-success: oklch(58% 0.16 148);
+  
+  /* Brand-aligned Modern Electronics Violet palette in OKLCH */
+  --color-paper: oklch(98% 0.008 280);
+  --color-paper-2: oklch(95.5% 0.02 280);
+  --color-paper-3: oklch(92% 0.035 280);
+  --color-ink: oklch(20% 0.03 275);
+  --color-ink-2: oklch(28% 0.035 275);
+  --color-muted: oklch(52% 0.03 275);
+  --color-rule: oklch(88% 0.015 280);
+  --color-rule-2: oklch(78% 0.03 280);
+  
+  /* Modern Electronics Electric Violet */
+  --color-accent: oklch(58% 0.24 285);
+  --color-accent-deep: oklch(48% 0.23 285);
+  --color-accent-press: oklch(38% 0.21 285);
+  --color-accent-soft: oklch(88% 0.07 285);
+  --color-accent-ink: oklch(99% 0.005 280);
+  --color-focus: oklch(52% 0.24 285);
+
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Onest", ui-sans-serif, system-ui, sans-serif;
+  --font-outlier: "JetBrains Mono", ui-monospace, monospace;
+  --radius-card: 20px;
+  --radius-input: 12px;
+  --radius-pill: 999px;
+  --shadow-card: 0 4px 16px -2px oklch(20% 0.03 275 / 0.06), 0 1px 3px oklch(20% 0.03 275 / 0.03);
+  --tracking-display: -0.025em;
+}
+:root {
+  color-scheme: light;
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+  --dur-micro: 120ms;
+  --dur-short: 200ms;
+  --dur-long: 380ms;
+  --container: 1440px;
+  --gutter: 20px;
+  --shade: 20% 0.03 275;
+  --display-weight: 700;
+  --btn-press-shadow: 0 4px 0 var(--color-accent-press), 0 8px 16px -4px oklch(var(--shade) / 0.25);
+  --btn-active-shadow: 0 1px 0 var(--color-accent-press), 0 3px 6px -1px oklch(var(--shade) / 0.15);
+  --chip-shadow: 0 2px 4px oklch(var(--shade) / 0.05), 0 1px 2px oklch(var(--shade) / 0.03);
+}

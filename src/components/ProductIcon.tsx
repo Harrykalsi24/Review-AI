@@ -9,6 +9,7 @@ import {
   Flame,
   Droplets,
   Utensils,
+  Speaker,
   PackagePlus,
   Package,
 } from 'lucide-react';
@@ -49,6 +50,9 @@ export default function ProductIcon({ iconName, className = 'w-5 h-5' }: Props) 
     case 'utensils':
     case 'kitchen':
       return <Utensils className={className} />;
+    case 'speaker':
+    case 'speakers':
+      return <Speaker className={className} />;
     case 'packageplus':
     case 'other':
       return <PackagePlus className={className} />;

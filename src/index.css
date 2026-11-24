@@ -1,1 +1,38 @@
 @import "tailwindcss";
+@import "./tokens.css";
+@import "./base.css" layer(base);
+
+/* Tactile interactive elements */
+.tactile-button {
+  background-color: var(--color-accent-deep);
+  color: var(--color-accent-ink);
+  box-shadow: var(--btn-press-shadow);
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease;
+}
+.tactile-button:hover {
+  background-color: var(--color-accent);
+}
+.tactile-button:active {
+  transform: translateY(3px);
+  box-shadow: var(--btn-active-shadow);
+}
+
+.tactile-chip {
+  box-shadow: var(--chip-shadow);
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 140ms cubic-bezier(0.16, 1, 0.3, 1), border-color 140ms ease, background-color 140ms ease;
+}
+.tactile-chip:hover {
+  border-color: var(--color-accent-soft);
+  transform: translateY(-1px);
+}
+.tactile-chip:active {
+  transform: translateY(1px);
+}
+
+.tactile-btn-secondary {
+  box-shadow: var(--chip-shadow);
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 140ms cubic-bezier(0.16, 1, 0.3, 1), background-color 140ms ease;
+}
+.tactile-btn-secondary:active {
+  transform: translateY(1px);
+}

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Save, Eye, EyeOff, Wifi, WifiOff, Trash2,
   Plus, GripVertical, ToggleLeft, ToggleRight, ExternalLink,
-  Building2, Link2, Bot, Package, HelpCircle,
+  Building2, Link2, Bot, Package, HelpCircle, AlertCircle,
 } from 'lucide-react';
 import ProductIcon from '../components/ProductIcon';
 import { testApiConnection } from '../services/aiService';
@@ -62,7 +62,7 @@ export default function AdminPage({
   const addProduct = () => {
     if (!newProductName.trim()) return;
     const id = newProductName.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
-    setLocalProducts(p => [...p, { id, name: newProductName.trim(), icon: '🛒', enabled: true, order: p.length }]);
+    setLocalProducts(p => [...p, { id, name: newProductName.trim(), icon: 'Package', enabled: true, order: p.length }]);
     setNewProductName('');
   };
   const resetProducts = () => setLocalProducts([...DEFAULT_PRODUCTS]);
@@ -278,8 +278,9 @@ export default function AdminPage({
                 {apiStatus.message}
               </div>
             )}
-            <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700">
-              ⚠️ Your API key is stored in your browser's local storage. Never share this device or its browser storage with untrusted users. For production use, store API keys in server-side environment variables.
+            <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-800 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>Your API key is stored in your browser local storage. Never share this device or its browser storage with untrusted users. For production use, store API keys in server-side environment variables.</span>
             </div>
           </div>
         )}
@@ -362,7 +363,7 @@ export default function AdminPage({
       <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4">
         <motion.button
           onClick={handleSave}
-          className={`w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-sm transition-all ${
+          className={`w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-sm transition-colors transition-transform ${
             saved ? 'bg-green-500 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200'
           }`}
           whileTap={{ scale: 0.98 }}

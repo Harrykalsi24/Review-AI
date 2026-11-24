@@ -62,12 +62,12 @@ export default function App() {
       {/* Admin PIN Authentication Modal */}
       <AnimatePresence>
         {showPinModal && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl border border-slate-100 flex flex-col gap-4"
+              className="bg-white rounded-3xl p-6 max-w-xs w-full border border-slate-200 flex flex-col gap-4 shadow-lg"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
@@ -112,7 +112,7 @@ export default function App() {
                   type="submit"
                   className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm"
                 >
-                  Unlock Settings
+                  Open Settings
                 </button>
               </form>
             </motion.div>

@@ -15,9 +15,11 @@ export const storageService = {
       const parsed = JSON.parse(raw);
       const rawUrl = parsed.googleReviewUrl;
       const validUrl = rawUrl && rawUrl.includes('modern+electronics') ? rawUrl : DEFAULT_SETTINGS.googleReviewUrl;
+      const logoUrl = parsed.logoUrl || DEFAULT_SETTINGS.logoUrl;
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
+        logoUrl,
         googleReviewUrl: validUrl,
         aiApiKey: parsed.aiApiKey || DEFAULT_SETTINGS.aiApiKey,
         aiBaseUrl: parsed.aiBaseUrl || DEFAULT_SETTINGS.aiBaseUrl,
@@ -33,10 +35,13 @@ export const storageService = {
       const raw = localStorage.getItem(KEYS.products);
       if (!raw) return [...DEFAULT_PRODUCTS];
       const parsed: Product[] = JSON.parse(raw);
-      return parsed.map(p => {
+      const existingIds = new Set(parsed.map(p => p.id));
+      const missingDefaults = DEFAULT_PRODUCTS.filter(d => !existingIds.has(d.id));
+      const merged = [...parsed, ...missingDefaults];
+      return merged.map(p => {
         const def = DEFAULT_PRODUCTS.find(d => d.id === p.id);
         return def ? { ...p, icon: def.icon } : p;
-      });
+      }).sort((a, b) => a.order - b.order);
     } catch { return [...DEFAULT_PRODUCTS]; }
   },
   saveProducts(p: Product[]): void {
