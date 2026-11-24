@@ -1,4 +1,4 @@
-import { LOGO_BASE64 } from '../assets/logoBase64';
+import { LOGO_BASE64 } from '../assets/logoBase64.ts';
 
 export interface Product {
   id: string;
