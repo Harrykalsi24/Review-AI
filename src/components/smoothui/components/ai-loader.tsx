@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 
 export const AI_LOADER_CYCLE_SECONDS = 1.6;
 
@@ -10,22 +9,25 @@ export interface AILoaderProps extends React.HTMLAttributes<HTMLDivElement> {
   text?: string;
 }
 
+/**
+ * Quiet loading state: a solid accent square, the label, and an
+ * optional elapsed timer in mono. No looping pulse, grid or bar —
+ * nothing here is live, so nothing animates.
+ */
 export default function AILoader({
-  variant = 'grid',
   showElapsed = false,
   label,
   text,
   className = '',
   ...props
 }: AILoaderProps) {
-  const displayText = label || text || 'Thinking...';
+  const displayText = label || text || 'Writing your review';
   const [seconds, setSeconds] = useState(0);
-  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!showElapsed) return;
     const interval = setInterval(() => {
-      setSeconds(s => s + 1);
+      setSeconds((s) => s + 1);
     }, 1000);
     return () => clearInterval(interval);
   }, [showElapsed]);
@@ -41,97 +43,16 @@ export default function AILoader({
       role="status"
       aria-live="polite"
       aria-label={displayText}
-      className={`inline-flex items-center gap-3 text-xs font-semibold text-accent-deep ${className}`}
+      className={`inline-flex items-center gap-2 text-sm font-medium text-accent-deep ${className}`}
       {...props}
     >
-      {/* 3x3 Grid Variant with brand violet / logo color */}
-      {variant === 'grid' && (
-        <div className="grid grid-cols-3 gap-1 w-5 h-5 shrink-0">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <motion.div
-              key={i}
-              className="bg-accent rounded-[2px]"
-              animate={
-                shouldReduceMotion
-                  ? { opacity: 0.8 }
-                  : {
-                      opacity: [0.15, 1, 0.15],
-                      scale: [0.8, 1.05, 0.8],
-                    }
-              }
-              transition={
-                shouldReduceMotion
-                  ? {}
-                  : {
-                      duration: AI_LOADER_CYCLE_SECONDS,
-                      repeat: Infinity,
-                      delay: (i % 3 + Math.floor(i / 3)) * 0.12,
-                      ease: 'easeInOut',
-                    }
-              }
-            />
-          ))}
-        </div>
+      <span aria-hidden className="w-2 h-2 shrink-0 rounded-[2px] bg-accent" />
+      <span>{displayText}</span>
+      {showElapsed && (
+        <span className="font-mono text-xs text-muted tabular-nums">
+          {formatTime(seconds)}
+        </span>
       )}
-
-      {/* Dots Variant */}
-      {variant === 'dots' && (
-        <div className="flex items-center gap-1 shrink-0">
-          {[0, 1, 2].map(i => (
-            <motion.span
-              key={i}
-              className="w-1.5 h-1.5 rounded-full bg-accent"
-              animate={
-                shouldReduceMotion
-                  ? { opacity: 0.8 }
-                  : { opacity: [0.2, 1, 0.2], scale: [0.75, 1, 0.75] }
-              }
-              transition={
-                shouldReduceMotion
-                  ? {}
-                  : {
-                      duration: AI_LOADER_CYCLE_SECONDS,
-                      repeat: Infinity,
-                      delay: i * 0.2,
-                      ease: 'easeInOut',
-                    }
-              }
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Bar Variant */}
-      {variant === 'bar' && (
-        <div className="w-12 h-1.5 rounded-full bg-paper-3 overflow-hidden shrink-0">
-          <motion.div
-            className="h-full bg-accent rounded-full"
-            animate={
-              shouldReduceMotion
-                ? { width: '50%' }
-                : { x: ['-100%', '100%'] }
-            }
-            transition={
-              shouldReduceMotion
-                ? {}
-                : {
-                    duration: AI_LOADER_CYCLE_SECONDS,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }
-            }
-          />
-        </div>
-      )}
-
-      <div className="flex items-center gap-1.5">
-        <span>{displayText}</span>
-        {showElapsed && (
-          <span className="font-mono text-[11px] opacity-75">
-            ({formatTime(seconds)})
-          </span>
-        )}
-      </div>
     </div>
   );
 }

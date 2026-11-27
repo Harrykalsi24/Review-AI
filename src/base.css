@@ -9,7 +9,18 @@ html, body {
 }
 body {
   margin: 0;
-  background: var(--color-paper);
+  /* The wallpaper the Liquid Glass chrome refracts: a rich violet /
+     amber aurora, like an iOS wallpaper. Glass needs saturated colour
+     behind it — over flat cream it is just a tinted box. */
+  background-color: #2e1065;
+  background-image:
+    radial-gradient(900px 620px at 8% -10%, rgb(124 58 237 / 0.9), transparent 62%),
+    radial-gradient(760px 560px at 98% 8%, rgb(245 158 11 / 0.75), transparent 60%),
+    radial-gradient(820px 640px at 88% 58%, rgb(168 85 247 / 0.55), transparent 64%),
+    radial-gradient(900px 700px at 12% 96%, rgb(14 165 233 / 0.5), transparent 62%),
+    radial-gradient(700px 500px at 55% 118%, rgb(217 119 6 / 0.55), transparent 60%),
+    linear-gradient(180deg, #312e81 0%, #4c1d95 46%, #1e1b4b 100%);
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-body);
   font-size: var(--text-md);
@@ -23,7 +34,7 @@ a { color: inherit; text-decoration: none; }
 h1, h2, h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.2;
 }
 p { margin: 0; }
