@@ -2,6 +2,128 @@ import type { QuestionnaireData, ReviewLength, AdminSettings } from '../types/in
 import { DEFAULT_PRODUCTS, DEFAULT_EXPERIENCES } from '../types/index.ts';
 import { SYNTHETIC_REVIEWS_DATASET } from '../data/trainingDataset.ts';
 
+/** One AI call may hang on a flaky kiosk network; fail fast and fall back. */
+export const AI_REQUEST_TIMEOUT_MS = 20_000;
+/** One retry, only for transient failures (timeout / network / 429 / 5xx). */
+const AI_MAX_RETRIES = 1;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function normalizeBaseUrl(baseUrl: string): string {
+  return baseUrl.trim().replace(/\/+$/, '');
+}
+
+function getOrigin(): string {
+  return typeof window !== 'undefined' && window.location?.origin
+    ? window.location.origin
+    : '';
+}
+
+/** Error that knows whether a retry could help. */
+class AiRequestError extends Error {
+  status?: number;
+  retryable: boolean;
+
+  constructor(message: string, opts: { status?: number; retryable?: boolean } = {}) {
+    super(message);
+    this.name = 'AiRequestError';
+    this.status = opts.status;
+    this.retryable = opts.retryable ?? false;
+  }
+}
+
+function isRetryable(err: unknown): boolean {
+  if (err instanceof AiRequestError) return err.retryable;
+  if (err instanceof Error) {
+    // Fetch throws TypeError on network failure; AbortError is a timeout here.
+    if (err.name === 'AbortError') return true;
+    if (/timed out/i.test(err.message)) return true;
+    return err instanceof TypeError;
+  }
+  return false;
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number = AI_REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new AiRequestError(`AI request timed out after ${timeoutMs / 1000}s`, {
+        retryable: true,
+      });
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Read an error body without crashing on HTML / empty / non-JSON responses. */
+async function readErrorMessage(res: Response): Promise<string> {
+  try {
+    const text = await res.text();
+    if (!text) return `API error ${res.status}`;
+    try {
+      const parsed: unknown = JSON.parse(text);
+      if (parsed && typeof parsed === 'object' && 'error' in parsed) {
+        const err = (parsed as { error?: unknown }).error;
+        if (typeof err === 'string' && err) return err;
+        if (err && typeof err === 'object' && 'message' in err) {
+          const msg = (err as { message?: unknown }).message;
+          if (typeof msg === 'string' && msg) return msg;
+        }
+      }
+      return `API error ${res.status}`;
+    } catch {
+      // Plain-text / HTML error page from a proxy or provider.
+      return text.slice(0, 200).trim() || `API error ${res.status}`;
+    }
+  } catch {
+    return `API error ${res.status}`;
+  }
+}
+
+/** Read a success body without crashing on empty / non-JSON responses. */
+async function readJsonSafely(res: Response): Promise<Record<string, unknown>> {
+  try {
+    const text = await res.text();
+    if (!text) return {};
+    const parsed: unknown = JSON.parse(text);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function buildChatHeaders(settings: AdminSettings): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  // The key goes ONLY to a known direct provider host. A custom base URL
+  // is a server-side proxy by design and needs no key — and sending the
+  // key to an arbitrary admin-entered host would leak it. Hostname-based
+  // on purpose: a substring check would trust agentrouter.org.evil.com.
+  if (settings.aiApiKey && requiresDirectApiKey(settings.aiBaseUrl)) {
+    headers['Authorization'] = `Bearer ${settings.aiApiKey}`;
+  }
+  if (settings.aiBaseUrl.includes('openrouter.ai')) {
+    const origin = getOrigin();
+    if (origin) headers['HTTP-Referer'] = origin;
+    headers['X-Title'] = settings.businessName;
+  }
+  return headers;
+}
+
 const LENGTH_GUIDE: Record<ReviewLength, string> = {
   short: 'Keep it concise, approximately 25-45 words.',
   balanced: 'Keep it well-rounded, approximately 55-90 words.',
@@ -44,6 +166,8 @@ export function sanitizeUserInput(input?: string, maxLen = 80): string {
 export function formatProductNoun(name: string, withArticle = false): string {
   const lower = name.toLowerCase().trim();
   let base = name;
+
+  if (!base.trim()) return base;
 
   // Map plural display labels to natural singular nouns
   if (lower === 'refrigerators') base = 'refrigerator';
@@ -198,7 +322,12 @@ export function getReferenceReviews(
   const pool = categoryMatched.length >= maxCount ? categoryMatched : fallbackSentimentMatched;
   if (!pool || pool.length === 0) return [];
 
-  const shuffled = [...pool].sort(() => 0.5 - Math.random());
+  const shuffled = [...pool];
+  // Fisher-Yates: the old sort(() => 0.5 - Math.random()) was biased.
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
   return shuffled.slice(0, maxCount).map(s => s.review);
 }
 
@@ -415,6 +544,27 @@ export function generateLocalFallbackReview(
   return sanitizeGeneratedReviewText(review, customText);
 }
 
+const DIRECT_KEY_HOSTS = [
+  'agentrouter.org',
+  'api.openai.com',
+  'openrouter.ai',
+  'api.groq.com',
+  'generativelanguage.googleapis.com',
+];
+
+function hostOf(baseUrl: string): string {
+  try {
+    return new URL(baseUrl.trim()).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+function requiresDirectApiKey(baseUrl: string): boolean {
+  const host = hostOf(baseUrl);
+  return DIRECT_KEY_HOSTS.some(h => host === h || host.endsWith(`.${h}`));
+}
+
 export async function generateReview(
   data: QuestionnaireData,
   length: ReviewLength,
@@ -423,81 +573,83 @@ export async function generateReview(
 ): Promise<{ text: string; isFallback?: boolean }> {
   const prompt = buildPrompt(data, length, settings.businessName);
   const customText = data.otherProductText?.trim();
+  const fallback = (): { text: string; isFallback: boolean } => ({
+    text: generateLocalFallbackReview(data, length, settings.businessName),
+    isFallback: true,
+  });
 
-  if (!settings.aiApiKey || !settings.aiBaseUrl) {
-    return {
-      text: generateLocalFallbackReview(data, length, settings.businessName),
-      isFallback: true,
-    };
+  if (!settings.aiBaseUrl || (!settings.aiApiKey && requiresDirectApiKey(settings.aiBaseUrl))) {
+    return fallback();
   }
 
-  try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${settings.aiApiKey}`,
-    };
+  const url = `${normalizeBaseUrl(settings.aiBaseUrl)}/chat/completions`;
+  let lastError: Error | null = null;
 
-    if (settings.aiBaseUrl.includes('openrouter.ai')) {
-      headers['HTTP-Referer'] = window.location.origin;
-      headers['X-Title'] = settings.businessName;
+  for (let attempt = 0; attempt <= AI_MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: buildChatHeaders(settings),
+        body: JSON.stringify({
+          model: settings.aiModel,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: settings.maxTokens,
+          // Respect the admin setting (clamped to 0–2); the old code
+          // silently forced 0.7–1.0 whatever the admin chose.
+          temperature: Math.min(2, Math.max(0, settings.temperature ?? 0.8)),
+        }),
+      });
+
+      if (!res.ok) {
+        const msg = await readErrorMessage(res);
+        throw new AiRequestError(msg, {
+          status: res.status,
+          retryable: res.status === 429 || res.status >= 500,
+        });
+      }
+
+      const json = await readJsonSafely(res);
+      const choices = Array.isArray(json.choices) ? json.choices : [];
+      const first = choices[0] as { message?: { content?: unknown } } | undefined;
+      const rawContent = typeof first?.message?.content === 'string'
+        ? first.message.content.trim()
+        : '';
+      if (!rawContent) throw new AiRequestError('Empty response from AI', { retryable: true });
+
+      const sanitized = sanitizeGeneratedReviewText(rawContent, customText);
+      return { text: sanitized, isFallback: false };
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (!isRetryable(err) || attempt >= AI_MAX_RETRIES) break;
+      await sleep(500 * (attempt + 1));
     }
-
-    const res = await fetch(`${settings.aiBaseUrl}/chat/completions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: settings.aiModel,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: settings.maxTokens,
-        temperature: Math.min(1.0, Math.max(0.7, settings.temperature || 0.8)),
-      }),
-    });
-
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      const msg = (errBody as any)?.error?.message || `API error ${res.status}`;
-      throw new Error(msg);
-    }
-
-    const json = await res.json();
-    const rawContent = (json.choices?.[0]?.message?.content || '').trim();
-    if (!rawContent) throw new Error('Empty response from AI');
-
-    const sanitized = sanitizeGeneratedReviewText(rawContent, customText);
-    return { text: sanitized, isFallback: false };
-  } catch (err: any) {
-    onError?.(err.message);
-    return {
-      text: generateLocalFallbackReview(data, length, settings.businessName),
-      isFallback: true,
-    };
   }
+
+  onError?.(lastError?.message ?? 'AI request failed');
+  return fallback();
 }
 
 export async function testApiConnection(settings: AdminSettings): Promise<{ ok: boolean; message: string }> {
-  if (!settings.aiApiKey) return { ok: false, message: 'API key is empty.' };
+  if (!settings.aiBaseUrl) return { ok: false, message: 'API base URL is empty.' };
+  if (!settings.aiApiKey && requiresDirectApiKey(settings.aiBaseUrl)) {
+    return { ok: false, message: 'API key is empty. Use a server-side proxy URL or enter a key.' };
+  }
   try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${settings.aiApiKey}`,
-    };
-    if (settings.aiBaseUrl.includes('openrouter.ai')) {
-      headers['HTTP-Referer'] = window.location.origin;
-      headers['X-Title'] = settings.businessName;
-    }
-    const res = await fetch(`${settings.aiBaseUrl}/chat/completions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: settings.aiModel,
-        messages: [{ role: 'user', content: 'Say OK' }],
-        max_tokens: 5,
-      }),
-    });
+    const res = await fetchWithTimeout(
+      `${normalizeBaseUrl(settings.aiBaseUrl)}/chat/completions`,
+      {
+        method: 'POST',
+        headers: buildChatHeaders(settings),
+        body: JSON.stringify({
+          model: settings.aiModel,
+          messages: [{ role: 'user', content: 'Say OK' }],
+          max_tokens: 5,
+        }),
+      },
+    );
     if (res.ok) return { ok: true, message: 'Connection successful! API is working.' };
-    const err = await res.json().catch(() => ({}));
-    return { ok: false, message: (err as any)?.error?.message || `Status ${res.status}` };
-  } catch (e: any) {
-    return { ok: false, message: e.message || 'Network error' };
+    return { ok: false, message: await readErrorMessage(res) };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : 'Network error' };
   }
 }

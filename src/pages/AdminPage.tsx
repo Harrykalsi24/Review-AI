@@ -92,30 +92,42 @@ export default function AdminPage({
     { id: 'questionnaire', label: 'Questions', icon: HelpCircle },
   ];
 
-  const inputClass = "w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-slate-700 bg-white";
-  const labelClass = "block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide";
-  const sectionClass = "bg-white border border-slate-100 rounded-2xl p-4 flex flex-col gap-4 shadow-sm";
+  const inputClass = "field w-full px-3 py-2.5 text-sm text-ink placeholder:text-muted";
+  const labelClass = "block text-sm font-medium text-ink-2 mb-1.5";
+  const sectionClass = "content-card p-5 flex flex-col gap-4";
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-10">
-        <div className="flex items-center px-4 py-3">
-          <button onClick={onBack} className="p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-50">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="flex-1 text-center text-sm font-bold text-slate-800 pr-7">Admin Settings</h1>
+    <div className="min-h-screen flex flex-col pt-24">
+      {/* Floating glass toolbar: back + title. */}
+      <header className="glass-toolbar glass-toolbar--fixed glass-sheen" data-refract>
+        <div className="glass-toolbar__content">
+          <div className="flex items-center gap-1 min-w-0">
+            <button
+              type="button"
+              onClick={onBack}
+              className="glass-toolbar__btn"
+              aria-label="Back to review form"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <span className="glass-toolbar__brand text-base truncate">Admin Settings</span>
+          </div>
         </div>
-        {/* Tab bar */}
-        <div className="flex border-t border-slate-100 overflow-x-auto">
+      </header>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 flex flex-col gap-4 max-w-3xl w-full mx-auto">
+        {/* Tabs: flat, on an opaque card — settings navigation is content,
+            not chrome, so it stays flat like iOS Settings. */}
+        <div className="content-card flex px-2 sm:px-4">
           {TABS.map(t => {
             const Icon = t.icon;
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 py-2.5 px-1 text-xs font-medium transition-colors border-b-2 ${
-                  tab === t.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'
+                className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 py-3 px-1 text-sm font-medium transition-colors border-b-2 ${
+                  tab === t.id ? 'border-accent-deep text-accent-deep' : 'border-transparent text-muted'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -124,15 +136,11 @@ export default function AdminPage({
             );
           })}
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-4">
 
         {tab === 'business' && (
           <>
             <div className={sectionClass}>
-              <h3 className="text-sm font-bold text-slate-800">Business Information</h3>
+              <h3 className="text-sm font-medium text-ink">Business Information</h3>
               <div>
                 <label className={labelClass}>Business Name</label>
                 <input className={inputClass} value={up.businessName} onChange={e => set('businessName', e.target.value)} placeholder="Modern Electronics" />
@@ -147,12 +155,12 @@ export default function AdminPage({
               </div>
               <div>
                 <label className={labelClass}>Contact Info</label>
-                <input className={inputClass} value={up.contactInfo} onChange={e => set('contactInfo', e.target.value)} placeholder="Phone, email..." />
+                <input className={inputClass} value={up.contactInfo} onChange={e => set('contactInfo', e.target.value)} placeholder="Phone, email" />
               </div>
               <div>
                 <label className={labelClass}>Logo URL</label>
                 <input className={inputClass} value={up.logoUrl} onChange={e => set('logoUrl', e.target.value)} placeholder="https://..." />
-                {up.logoUrl && <img src={up.logoUrl} alt="logo" className="mt-2 w-16 h-16 rounded-xl object-cover border border-slate-200" />}
+                {up.logoUrl && <img src={up.logoUrl} alt="logo" className="mt-2 w-16 h-16 rounded-lg object-cover border border-rule" />}
               </div>
             </div>
           </>
@@ -160,7 +168,7 @@ export default function AdminPage({
 
         {tab === 'google' && (
           <div className={sectionClass}>
-            <h3 className="text-sm font-bold text-slate-800">Google Review Settings</h3>
+            <h3 className="text-sm font-medium text-ink">Google Review Settings</h3>
             <div>
               <label className={labelClass}>Google Review URL</label>
               <input
@@ -173,13 +181,13 @@ export default function AdminPage({
             {up.googleReviewUrl && (
               <button
                 onClick={() => window.open(up.googleReviewUrl, '_blank', 'noopener')}
-                className="flex items-center gap-2 text-sm text-blue-600 font-medium hover:text-blue-800"
+                className="flex items-center gap-2 text-sm text-accent-deep font-medium hover:text-accent"
               >
                 <ExternalLink className="w-4 h-4" />
                 Test Review Link
               </button>
             )}
-            <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700 leading-relaxed">
+            <div className="content-card-inner p-3 text-sm text-ink-2 leading-relaxed">
               <p className="font-semibold mb-1">How to get your Google Review link:</p>
               <ol className="list-decimal list-inside space-y-1">
                 <li>Search for your business on Google Maps</li>
@@ -195,7 +203,7 @@ export default function AdminPage({
         {tab === 'ai' && (
           <div className={sectionClass}>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800">AI Provider Settings</h3>
+              <h3 className="text-sm font-medium text-ink">AI Provider Settings</h3>
             </div>
             <div>
               <label className={labelClass}>Quick Presets</label>
@@ -213,11 +221,12 @@ export default function AdminPage({
                       set('aiBaseUrl', p.base);
                       set('aiModel', p.model);
                     }}
-                    className={`py-1.5 px-2 text-xs rounded-lg border text-left transition-colors ${
+                    className={`chip py-1.5 px-2 text-xs text-left transition-colors ${
                       up.aiBaseUrl === p.base
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
-                        : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                        ? 'text-accent-deep font-medium'
+                        : 'text-muted'
                     }`}
+                    aria-pressed={up.aiBaseUrl === p.base}
                   >
                     {p.label}
                   </button>
@@ -242,7 +251,7 @@ export default function AdminPage({
                   onChange={e => set('aiApiKey', e.target.value)}
                   placeholder="sk-..."
                 />
-                <button onClick={() => setShowKey(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <button onClick={() => setShowKey(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink">
                   {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -261,25 +270,25 @@ export default function AdminPage({
               <button
                 onClick={handleTestApi}
                 disabled={testingApi}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
+                className="glass-btn glass-btn--prominent flex-1"
               >
                 {testingApi ? 'Testing...' : <><Wifi className="w-4 h-4" />Test Connection</>}
               </button>
               <button
                 onClick={() => { set('aiApiKey', ''); setApiStatus(null); }}
-                className="flex items-center gap-1.5 py-2.5 px-3 border border-slate-200 text-slate-500 text-sm font-medium rounded-xl hover:bg-slate-50"
+                className="glass-btn"
               >
                 <Trash2 className="w-4 h-4" />Clear
               </button>
             </div>
             {apiStatus && (
-              <div className={`flex items-start gap-2 rounded-xl p-3 text-sm ${apiStatus.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              <div className={`content-card-inner flex items-start gap-2 p-3 text-sm ${apiStatus.ok ? 'text-success' : 'text-error'}`}>
                 {apiStatus.ok ? <Wifi className="w-4 h-4 mt-0.5" /> : <WifiOff className="w-4 h-4 mt-0.5" />}
                 {apiStatus.message}
               </div>
             )}
-            <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-800 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="content-card-inner p-3 text-sm text-ink-2 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-muted shrink-0 mt-0.5" />
               <span>Your API key is stored in your browser local storage. Never share this device or its browser storage with untrusted users. For production use, store API keys in server-side environment variables.</span>
             </div>
           </div>
@@ -288,8 +297,8 @@ export default function AdminPage({
         {tab === 'products' && (
           <div className={sectionClass}>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800">Product Categories</h3>
-              <button onClick={resetProducts} className="text-xs text-slate-500 hover:text-slate-700 underline">Reset defaults</button>
+              <h3 className="text-sm font-medium text-ink">Product Categories</h3>
+              <button onClick={resetProducts} className="text-xs text-muted hover:text-ink underline">Reset defaults</button>
             </div>
             <div className="flex gap-2">
               <input
@@ -297,22 +306,22 @@ export default function AdminPage({
                 value={newProductName}
                 onChange={e => setNewProductName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addProduct()}
-                placeholder="New category name..."
+                placeholder="New category name"
               />
-              <button onClick={addProduct} className="flex items-center gap-1 py-2.5 px-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700">
+              <button onClick={addProduct} className="glass-btn glass-btn--prominent glass-btn--icon" aria-label="Add category">
                 <Plus className="w-4 h-4" />
               </button>
             </div>
             <div className="flex flex-col gap-2">
-              {localProducts.sort((a, b) => a.order - b.order).map(p => (
-                <div key={p.id} className="flex items-center gap-3 py-2 px-3 bg-slate-50 rounded-xl">
-                  <GripVertical className="w-4 h-4 text-slate-300" />
-                  <ProductIcon iconName={p.icon || p.id} className="w-4 h-4 text-slate-600 shrink-0" />
-                  <span className="flex-1 text-sm text-slate-700">{p.name}</span>
-                  <button onClick={() => toggleProduct(p.id)} className="text-slate-400 hover:text-blue-600">
-                    {p.enabled ? <ToggleRight className="w-5 h-5 text-blue-500" /> : <ToggleLeft className="w-5 h-5" />}
+              {[...localProducts].sort((a, b) => a.order - b.order).map(p => (
+                <div key={p.id} className="content-card-inner flex items-center gap-3 py-2 px-3">
+                  <GripVertical className="w-4 h-4 text-rule-2" />
+                  <ProductIcon iconName={p.icon || p.id} className="w-4 h-4 text-muted shrink-0" />
+                  <span className="flex-1 text-sm text-ink">{p.name}</span>
+                  <button onClick={() => toggleProduct(p.id)} className="text-muted hover:text-accent-deep" aria-label={`${p.enabled ? 'Disable' : 'Enable'} ${p.name}`}>
+                    {p.enabled ? <ToggleRight className="w-5 h-5 text-accent-deep" /> : <ToggleLeft className="w-5 h-5" />}
                   </button>
-                  <button onClick={() => deleteProduct(p.id)} className="text-slate-300 hover:text-red-500">
+                  <button onClick={() => deleteProduct(p.id)} className="text-rule-2 hover:text-error" aria-label={`Delete ${p.name}`}>
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -324,8 +333,8 @@ export default function AdminPage({
         {tab === 'questionnaire' && (
           <div className={sectionClass}>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800">Experience Options</h3>
-              <button onClick={resetExperiences} className="text-xs text-slate-500 hover:text-slate-700 underline">Reset defaults</button>
+              <h3 className="text-sm font-medium text-ink">Experience Options</h3>
+              <button onClick={resetExperiences} className="text-xs text-muted hover:text-ink underline">Reset defaults</button>
             </div>
             <div className="flex gap-2">
               <input
@@ -333,21 +342,21 @@ export default function AdminPage({
                 value={newExpLabel}
                 onChange={e => setNewExpLabel(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addExp()}
-                placeholder="New option label..."
+                placeholder="New option label"
               />
-              <button onClick={addExp} className="flex items-center gap-1 py-2.5 px-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700">
+              <button onClick={addExp} className="glass-btn glass-btn--prominent glass-btn--icon" aria-label="Add option">
                 <Plus className="w-4 h-4" />
               </button>
             </div>
             <div className="flex flex-col gap-2">
-              {localExperiences.sort((a, b) => a.order - b.order).map(e => (
-                <div key={e.id} className="flex items-center gap-3 py-2 px-3 bg-slate-50 rounded-xl">
-                  <GripVertical className="w-4 h-4 text-slate-300" />
-                  <span className="flex-1 text-sm text-slate-700">{e.label}</span>
-                  <button onClick={() => toggleExp(e.id)} className="text-slate-400 hover:text-blue-600">
-                    {e.enabled ? <ToggleRight className="w-5 h-5 text-blue-500" /> : <ToggleLeft className="w-5 h-5" />}
+              {[...localExperiences].sort((a, b) => a.order - b.order).map(e => (
+                <div key={e.id} className="content-card-inner flex items-center gap-3 py-2 px-3">
+                  <GripVertical className="w-4 h-4 text-rule-2" />
+                  <span className="flex-1 text-sm text-ink">{e.label}</span>
+                  <button onClick={() => toggleExp(e.id)} className="text-muted hover:text-accent-deep" aria-label={`${e.enabled ? 'Disable' : 'Enable'} ${e.label}`}>
+                    {e.enabled ? <ToggleRight className="w-5 h-5 text-accent-deep" /> : <ToggleLeft className="w-5 h-5" />}
                   </button>
-                  <button onClick={() => deleteExp(e.id)} className="text-slate-300 hover:text-red-500">
+                  <button onClick={() => deleteExp(e.id)} className="text-rule-2 hover:text-error" aria-label={`Delete ${e.label}`}>
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -356,20 +365,24 @@ export default function AdminPage({
           </div>
         )}
 
-        <div className="h-20" />
+        <div className="h-24" />
       </div>
 
-      {/* Save button */}
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4">
+      {/* Save bar: floating glass surface, bottom edge. The button inside
+          is the plain variant — no glass on glass. */}
+      <div
+        className="glass-surface glass-sheen z-40 w-[min(calc(100%-32px),768px)] p-2"
+        style={{ position: 'fixed', bottom: 16, left: '50%', translate: '-50% 0' }}
+        data-refract
+      >
         <motion.button
           onClick={handleSave}
-          className={`w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-sm transition-colors transition-transform ${
-            saved ? 'bg-green-500 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200'
-          }`}
+          className={`glass-btn glass-btn--plain w-full ${saved ? '' : 'glass-btn--prominent'}`}
+          style={saved ? { background: 'var(--glass-switch-on)', color: '#fff' } : undefined}
           whileTap={{ scale: 0.98 }}
         >
           <Save className="w-4 h-4" />
-          {saved ? 'Settings Saved!' : 'Save Settings'}
+          {saved ? 'Saved' : 'Save settings'}
         </motion.button>
       </div>
     </div>

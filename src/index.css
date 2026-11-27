@@ -1,38 +1,98 @@
 @import "tailwindcss";
 @import "./tokens.css";
 @import "./base.css" layer(base);
+@import "./liquid-glass/tokens.css";
+@import "./liquid-glass/glass-surface.css";
+@import "./liquid-glass/glass-button.css";
+@import "./liquid-glass/glass-toolbar.css";
+@import "./liquid-glass/glass-segmented.css";
+@import "./liquid-glass/glass-modal.css";
+@import "./liquid-glass/glass-toast.css";
 
-/* Tactile interactive elements */
-.tactile-button {
-  background-color: var(--color-accent-deep);
-  color: var(--color-accent-ink);
-  box-shadow: var(--btn-press-shadow);
-  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease;
-}
-.tactile-button:hover {
-  background-color: var(--color-accent);
-}
-.tactile-button:active {
-  transform: translateY(3px);
-  box-shadow: var(--btn-active-shadow);
+/* ------------------------------------------------------------------
+   Liquid Glass (jcm-developer/liquid-glass-components v2.1.0, MIT)
+   applied the way its skill demands, and the way Apple does it:
+
+   - Glass lives ONLY on the chrome layer: the floating toolbar, the
+     primary action, the segmented control, the PIN modal, the toast,
+     the bottom save bar. Those are the library's components above.
+   - Content is opaque. The form cards are plain white Apple-style
+     cards with a hairline border, never glass on glass, never glass
+     over flat colour. The rich aurora backdrop is what the chrome
+     refracts; the cards sit on it like Settings cards on wallpaper.
+   - System font stack first: SF Pro on Apple devices.
+   ------------------------------------------------------------------ */
+
+/* Opaque content card. White, hairline border, soft shadow. */
+.content-card {
+  background-color: #ffffff;
+  border: 1px solid rgb(0 0 0 / 0.06);
+  border-radius: var(--radius-card);
+  box-shadow:
+    0 10px 30px -12px rgb(30 27 75 / 0.35),
+    0 1px 2px rgb(30 27 75 / 0.06);
 }
 
-.tactile-chip {
-  box-shadow: var(--chip-shadow);
-  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 140ms cubic-bezier(0.16, 1, 0.3, 1), border-color 140ms ease, background-color 140ms ease;
-}
-.tactile-chip:hover {
-  border-color: var(--color-accent-soft);
-  transform: translateY(-1px);
-}
-.tactile-chip:active {
-  transform: translateY(1px);
+/* Recessed inner panel inside a content card (rating box, info box,
+   list rows): Apple systemGray6. */
+.content-card-inner {
+  background-color: #f5f5f7;
+  border-radius: 16px;
 }
 
-.tactile-btn-secondary {
-  box-shadow: var(--chip-shadow);
-  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 140ms cubic-bezier(0.16, 1, 0.3, 1), background-color 140ms ease;
+/* Error state for a content card: the border override has to live
+   here, unlayered, or Tailwind's layered border utilities lose to
+   .content-card's own border shorthand. */
+.content-card--error {
+  border-color: rgb(248 113 113 / 0.7);
 }
-.tactile-btn-secondary:active {
-  transform: translateY(1px);
+
+/* Flat pill control on opaque content. Selected is an accent tint
+   with an accent rim. Labels wrap, never truncate. */
+.chip {
+  background-color: #ffffff;
+  border: 1px solid rgb(0 0 0 / 0.08);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 1px 3px rgb(30 27 75 / 0.06);
+  transition: background-color 120ms cubic-bezier(0.22, 1, 0.36, 1), border-color 120ms cubic-bezier(0.22, 1, 0.36, 1), transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.chip:hover {
+  background-color: #fafafa;
+}
+.chip:active {
+  transform: scale(0.98);
+}
+.chip[aria-pressed="true"],
+.chip[data-active="true"] {
+  background-color: rgb(91 46 166 / 0.1);
+  border-color: var(--color-accent-deep);
+}
+
+/* Opaque form control on white: hairline border, accent focus ring. */
+.field {
+  background-color: #ffffff;
+  border: 1px solid rgb(0 0 0 / 0.14);
+  border-radius: var(--radius-input);
+}
+.field:focus {
+  border-color: var(--color-accent-deep);
+  outline: 2px solid rgb(76 36 140 / 0.25);
+  outline-offset: 0;
+}
+/* Kiosk fields size themselves; no manual resize grip. */
+textarea.field {
+  resize: none;
+}
+
+/* Taller primary action: the library button is 44px; the single
+   call to action on each screen gets 52px. */
+.cta {
+  min-height: 52px;
+  font-size: 1rem;
+}
+
+/* Receipt rule: the signature detail. A dashed hairline, used under
+   the review draft and in the questionnaire header. */
+.receipt-rule {
+  border-top: 1px dashed var(--color-rule-2);
 }

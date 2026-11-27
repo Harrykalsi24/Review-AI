@@ -1,15 +1,21 @@
-import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import SinglePageReviewApp from './pages/SinglePageReviewApp';
 import GeneratedReviewPage from './pages/GeneratedReviewPage';
 import AdminPage from './pages/AdminPage';
 import { useSettings } from './hooks/useSettings';
 import type { QuestionnaireData } from './types';
-import { Settings, Lock, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 type Screen = 'questionnaire' | 'review' | 'admin';
 
-const ADMIN_PIN = '1234';
+// Changeable at build time via VITE_ADMIN_PIN. Default stays 1234 so existing
+// kiosks keep working; this is a kiosk deterrent, not real authentication —
+// the API key is already client-side, so never treat the PIN as security.
+const ADMIN_PIN =
+  (typeof import.meta !== 'undefined' &&
+    (import.meta.env?.VITE_ADMIN_PIN as string | undefined)) ||
+  '1234';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('questionnaire');
@@ -20,6 +26,26 @@ export default function App() {
   const [pinError, setPinError] = useState('');
 
   const { settings, products, experiences, saveSettings, saveProducts, saveExperiences } = useSettings();
+  const tapResetTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(tapResetTimer.current), []);
+
+  // Native <dialog> for the PIN modal: open/close it imperatively.
+  const pinDialogRef = useRef<HTMLDialogElement | null>(null);
+  useEffect(() => {
+    const dialog = pinDialogRef.current;
+    if (!dialog) return;
+    if (showPinModal && !dialog.open) dialog.showModal();
+    if (!showPinModal && dialog.open) dialog.close();
+  }, [showPinModal]);
+
+  // The engine only sees markup that exists when it runs. React swaps
+  // screens, so re-scan after every screen change; init() skips elements
+  // it already enhanced.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => window.LiquidGlass?.init());
+    return () => cancelAnimationFrame(id);
+  }, [screen]);
 
   const handleAdminTap = () => {
     const next = adminTapCount + 1;
@@ -29,8 +55,11 @@ export default function App() {
       setAdminTapCount(0);
       setPinInput('');
       setPinError('');
+      window.clearTimeout(tapResetTimer.current);
+      return;
     }
-    setTimeout(() => setAdminTapCount(0), 3000);
+    window.clearTimeout(tapResetTimer.current);
+    tapResetTimer.current = window.setTimeout(() => setAdminTapCount(0), 3000);
   };
 
   const handlePinSubmit = (e: React.FormEvent) => {
@@ -41,84 +70,78 @@ export default function App() {
       setPinInput('');
       setPinError('');
     } else {
-      setPinError('Incorrect PIN code');
+      setPinError('Incorrect PIN');
     }
   };
 
   return (
-    <div className="font-sans antialiased bg-slate-50 min-h-screen relative">
-      {/* Discreet 5-tap admin trigger */}
-      {screen !== 'admin' && (
-        <button
-          onClick={handleAdminTap}
-          className="fixed bottom-3 right-3 z-50 w-9 h-9 rounded-full flex items-center justify-center opacity-20 hover:opacity-70 transition-opacity bg-white shadow-sm border border-slate-200"
-          aria-label="Admin Settings"
-          title="Tap 5 times to open Admin Settings"
-        >
-          <Settings className="w-4 h-4 text-slate-500" />
-        </button>
-      )}
-
-      {/* Admin PIN Authentication Modal */}
-      <AnimatePresence>
-        {showPinModal && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 max-w-xs w-full border border-slate-200 flex flex-col gap-4 shadow-lg"
+    <div className="font-sans antialiased text-ink min-h-screen relative">
+      {/* Admin PIN modal: native <dialog>, Liquid Glass panel. */}
+      <dialog
+        ref={pinDialogRef}
+        className="glass-modal"
+        aria-labelledby="pin-title"
+        onClose={() => setShowPinModal(false)}
+        onClick={e => {
+          if (e.target === e.currentTarget) setShowPinModal(false);
+        }}
+      >
+        <div className="glass-modal__panel" data-refract data-refract-bezel="28">
+          <header className="glass-modal__header">
+            <h2 className="glass-modal__title" id="pin-title">
+              Admin access
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowPinModal(false)}
+              className="glass-btn glass-btn--plain glass-btn--icon glass-btn--sm"
+              aria-label="Close"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <Lock className="w-4 h-4" />
-                  </div>
-                  <span>Admin Access</span>
-                </div>
-                <button
-                  onClick={() => setShowPinModal(false)}
-                  className="text-slate-400 hover:text-slate-600 p-1"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Enter your Admin PIN to manage store configuration and AI settings.
-              </p>
-
-              <form onSubmit={handlePinSubmit} className="flex flex-col gap-3">
-                <input
-                  type="password"
-                  autoFocus
-                  maxLength={6}
-                  value={pinInput}
-                  onChange={e => {
-                    setPinInput(e.target.value);
-                    setPinError('');
-                  }}
-                  placeholder="Enter PIN (Default: 1234)"
-                  className="w-full text-center tracking-widest text-base font-bold py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none"
-                />
-
-                {pinError && (
-                  <p className="text-[11px] font-semibold text-red-600 text-center">
-                    {pinError}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm"
-                >
-                  Open Settings
-                </button>
-              </form>
-            </motion.div>
+              <X className="w-4 h-4" />
+            </button>
+          </header>
+          <div className="glass-modal__body">
+            Enter the admin PIN to change store and AI settings.
           </div>
-        )}
-      </AnimatePresence>
+
+          <form onSubmit={handlePinSubmit} className="flex flex-col gap-3 mt-4">
+            <input
+              type="password"
+              autoFocus
+              maxLength={6}
+              value={pinInput}
+              onChange={e => {
+                setPinInput(e.target.value);
+                setPinError('');
+              }}
+              placeholder="Enter PIN"
+              className="field w-full text-center font-mono text-base py-2.5 px-3"
+            />
+
+            {pinError && (
+              <p className="text-xs font-medium text-error text-center">
+                {pinError}
+              </p>
+            )}
+
+            <div className="glass-modal__actions">
+              <button
+                type="button"
+                onClick={() => setShowPinModal(false)}
+                className="glass-btn glass-btn--plain"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="glass-btn glass-btn--plain glass-btn--prominent"
+              >
+                Open settings
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
 
       <AnimatePresence mode="wait">
         {screen === 'questionnaire' && (
@@ -132,6 +155,7 @@ export default function App() {
               setQuestionnaireData(data);
               setScreen('review');
             }}
+            onAdminTap={handleAdminTap}
           />
         )}
 
@@ -141,6 +165,7 @@ export default function App() {
             data={questionnaireData}
             settings={settings}
             onBack={() => setScreen('questionnaire')}
+            onAdminTap={handleAdminTap}
           />
         )}
 
